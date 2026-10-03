@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<title>hqall &mdash; live situational map</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+<link rel="stylesheet" href="/static/app.css" />
+<!-- Free icon set (Apache-2.0, Google Fonts). If it fails to load, app.js hides
+     the ligature text and the coloured chip backgrounds still read. -->
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=block" />
+</head>
+<body>
+
+<div id="map"></div>
+
+<!-- ------------------------------------------------------------------ -->
+<!-- top bar                                                            -->
+<!-- ------------------------------------------------------------------ -->
+<header id="topbar">
+  <div class="brand">
+    <span class="dot"></span>
+    <strong>hqall</strong>
+    <span id="origin-label" class="origin">Central Finland</span>
+  </div>
+
+  <div class="search">
+    <input id="search-input" type="search" data-i18n-ph="search" placeholder="Find a place (e.g. Tampere, Helsinki)" autocomplete="off" />
+    <div id="search-results" class="results" hidden></div>
+  </div>
+
+  <div class="counts" id="counts">
+    <span class="pill" id="c-aircraft" data-i18n-tip="aircraft" title="Aircraft"><i class="ms">flight</i><b>0</b></span>
+    <span class="pill" id="c-aprs" data-i18n-tip="aprsStations" title="APRS stations"><i class="ms">settings_input_antenna</i><b>0</b></span>
+    <span class="pill" id="c-ais" data-i18n-tip="vessels" title="Vessels"><i class="ms">directions_boat</i><b>0</b></span>
+    <span class="pill" id="c-incidents" data-i18n-tip="incidents" title="Incidents"><i class="ms">emergency</i><b>0</b></span>
+    <span class="pill" id="c-traffic" data-i18n-tip="traffic" title="Traffic notices"><i class="ms">traffic</i><b>0</b></span>
+  </div>
+
+  <button id="lang-toggle" class="lang-btn" title="FI/EN">FI</button>
+  <button id="bookmark-btn" class="icon-btn" data-i18n-tip="bookmark" title="Add Bookmark" aria-label="Add Bookmark"><i class="ms">bookmark</i></button>
+  <button id="panel-toggle" class="icon-btn" data-i18n-tip="settings" title="Settings" aria-label="Settings" aria-expanded="false"><i class="ms">settings</i></button>
+</header>
+
+<!-- update banner (GitHub release check, sees HQALL_REPO /api/version) -->
+<div id="update-banner" class="update-banner" hidden>
+  <span class="ms">system_update</span>
+  <a id="update-link" href="#" target="_blank" rel="noopener"></a>
+  <button id="update-dismiss" class="icon-btn small" title="Dismiss">&#10005;</button>
+</div>
+
+<!-- ------------------------------------------------------------------ -->
+<!-- weather card                                                       -->
+<!-- ------------------------------------------------------------------ -->
+<section id="weather-card" class="card">
+  <div class="wx-head">
+    <i class="ms">location_on</i>
+    <input id="wx-city" class="wx-city" type="text" data-i18n-ph="weatherCity" placeholder="Weather city" autocomplete="off" />
+    <div id="wx-city-results" class="results" hidden></div>
+  </div>
+  <div class="wx-main">
+    <span id="wx-icon" class="wx-icon ms">cloud</span>
+    <div class="wx-temp">
+      <b id="wx-temp">--</b><span class="deg">&deg;C</span>
+      <small id="wx-desc">loading&hellip;</small>
+    </div>
+  </div>
+  <dl class="wx-grid">
+    <div><dt data-i18n="wxFeels">Feels</dt><dd id="wx-feels">--</dd></div>
+    <div><dt data-i18n="wxWind">Wind</dt><dd id="wx-wind">--</dd></div>
+    <div><dt data-i18n="wxGusts">Gusts</dt><dd id="wx-gusts">--</dd></div>
+    <div><dt data-i18n="wxClouds">Clouds</dt><dd id="wx-clouds">--</dd></div>
+    <div><dt data-i18n="wxHumidity">Humidity</dt><dd id="wx-humidity">--</dd></div>
+    <div><dt data-i18n="wxPressure">Pressure</dt><dd id="wx-pressure">--</dd></div>
+    <div><dt data-i18n="wxPrecip">Precip</dt><dd id="wx-precip">--</dd></div>
+    <div><dt data-i18n="wxVisibility">Visibility</dt><dd id="wx-vis">--</dd></div>
+  </dl>
+  <div id="wx-updated" class="wx-updated"></div>
+</section>
+
+<!-- ------------------------------------------------------------------ -->
+<!-- incident / traffic list                                             -->
+<!-- ------------------------------------------------------------------ -->
+<aside id="feed" class="card">
+  <div class="feed-head">
+    <div class="tabs">
+      <button class="tab active" data-feed="incidents" data-i18n="tabInc">Incidents</button>
+      <button class="tab" data-feed="traffic" data-i18n="tabTraffic">Traffic</button>
+      <button class="tab" data-feed="aircraft" data-i18n="tabAircraft">Aircraft</button>
+      <button class="tab" data-feed="ais" data-i18n="tabAis">Vessels</button>
+    </div>
+    <button id="feed-collapse" class="icon-btn small">&#9662;</button>
+  </div>
+  <div id="feed-list" class="feed-list"></div>
+</aside>
+
+<!-- ------------------------------------------------------------------ -->
+<!-- side panel: layers                                                 -->
+<!-- ------------------------------------------------------------------ -->
+<aside id="panel" class="card hidden">
+  <h2 data-i18n="layers">Layers</h2>
+
+  <label class="row"><input type="checkbox" id="l-aircraft" checked /> <span data-i18n="pAircraft">Aircraft (ADS-B)</span></label>
+  <label class="row sub"><input type="checkbox" id="l-ac-labels" checked /> <span data-i18n="pAcLabels">Show flight numbers on the map</span></label>
+  <label class="row"><input type="checkbox" id="l-aprs" checked /> <span data-i18n="pAprs">APRS stations</span></label>
+  <label class="row sub"><input type="checkbox" id="l-aprs-moving" checked /> <span data-i18n="pAprsMoving">Only moving stations</span></label>
+  <label class="row sub"><input type="checkbox" id="l-aprs-mp" checked /> <span data-i18n="pAprsMp">Cars (-9) &amp; walkers (-7)</span></label>
+  <label class="row sub"><input type="checkbox" id="l-aprs-digi" checked /> <span data-i18n="pAprsDigi">Hide digipeaters / iGates</span></label>
+  <label class="row sub"><input type="checkbox" id="l-aprs-rf" /> <span data-i18n="pAprsRf">Only RF-heard (no TCP/IP-only)</span></label>
+  <label class="row sub"><input type="checkbox" id="l-aprs-calls" checked /> <span data-i18n="pAprsCalls">Show callsigns on the map</span></label>
+  <label class="row"><input type="checkbox" id="l-ais" checked /> <span data-i18n="pAis">AIS vessels</span></label>
+  <label class="row"><input type="checkbox" id="l-incidents" checked /> <span data-i18n="pIncidents">Incidents (Tilannehuone)</span></label>
+  <label class="row"><input type="checkbox" id="l-traffic" checked /> <span data-i18n="pTraffic">Traffic notices</span></label>
+  <label class="row"><input type="checkbox" id="l-borders" checked /> <span data-i18n="pBorders">Country borders</span></label>
+
+  <h2 data-i18n="incHead">Incidents</h2>
+  <label class="row range">
+    <span data-i18n="showLast">Show last</span> <input type="range" id="l-incident-window" min="15" max="180" step="15" value="45" />
+    <span id="incident-window-label">45 min</span>
+  </label>
+  <div class="hint" data-i18n="incHint">
+    Reports stay at full brightness for 15 min after they arrive, then fade out
+    towards the end of the window. A new report opens its own popup once.
+  </div>
+
+  <h2 data-i18n="wxHead">Weather</h2>
+  <label class="row"><input type="checkbox" id="l-clouds" checked /> <span data-i18n="rainClouds">Rain &amp; clouds (RainViewer)</span></label>
+  <label class="row range">
+    <span data-i18n="opacity">Opacity</span> <input type="range" id="l-clouds-opacity" min="10" max="100" value="70" />
+  </label>
+  <div class="radar-controls">
+    <button id="radar-play" class="btn" disabled><span data-i18n="play">&#9654; play</span></button>
+    <span id="radar-time" class="radar-time">--</span>
+  </div>
+  <div class="hint" data-i18n="autoHint">
+    Live weather radar precipitation over the whole map — the same RainViewer
+    feed the tracker screens use. RainViewer stopped serving its separate
+    satellite cloud frames, so for the cloud deck itself use the MODIS layer
+    below (optional, off until ticked).
+  </div>
+  <label class="row"><input type="checkbox" id="l-cloudcover" /> <span data-i18n="cloudcover">Cloud cover (MODIS)</span></label>
+  <label class="row range">
+    <span data-i18n="opacity">Opacity</span> <input type="range" id="l-cloudcover-opacity" min="10" max="100" value="70" />
+  </label>
+  <div class="radar-controls">
+    <span id="cloudcover-time" class="radar-time">--</span>
+  </div>
+  <div class="hint" data-i18n="modisHint">
+    White is a full cloud deck, dark grey nearly clear, transparent is outside
+    the satellite pass. The pass is a few hours old at best and only has detail
+    up to zoom 6.
+  </div>
+
+  <h2 data-i18n="trackHead">Tracking</h2>
+  <label class="row"><input type="checkbox" id="l-trails" checked /> <span data-i18n="trails">15-minute trails (aircraft, moving APRS, vessels)</span></label>
+  <label class="row"><input type="checkbox" id="l-follow" /> <span data-i18n="follow">Follow map centre</span></label>
+  <label class="row range">
+    <span data-i18n="radius">Radius</span> <input type="range" id="l-radius" min="25" max="250" step="5" value="150" />
+    <span id="radius-label">150 NM</span>
+  </label>
+  <label class="row">
+    <span data-i18n="maxAlt">Max altitude</span> <input type="number" id="l-maxalt" value="45000" step="1000" min="0" /> ft
+  </label>
+
+  <h2 data-i18n="baseHead">Base map</h2>
+  <select id="basemap">
+    <option value="osm" data-i18n="osmDarkOp">OpenStreetMap (dark)</option>
+    <option value="osmhot" data-i18n="osmHotOp">Humanitarian OSM (dark)</option>
+    <option value="osmplain" data-i18n="osmPlainOp">OSM DE (light)</option>
+    <option value="esri" data-i18n="esriOp">Esri satellite</option>
+  </select>
+
+  <h2 data-i18n="statusHead">Status</h2>
+  <div id="source-status" class="status"></div>
+
+  <h2 data-i18n="legendHead">Legend</h2>
+  <div class="legend">
+    <div><span class="sw" style="background:#00bcd4"></span><span data-i18n="legAcLow">Aircraft &mdash; low altitude</span></div>
+    <div><span class="sw" style="background:#ff5252"></span><span data-i18n="legAcHigh">Aircraft &mdash; high altitude</span></div>
+    <div><span class="sw" style="background:#2fbf71"></span><span data-i18n="legAprs">APRS station</span></div>
+    <div><span class="sw" style="background:#4cc2ff"></span><span data-i18n="legVessel">Vessel</span></div>
+    <div><span class="sw" style="background:#ff6b6b"></span><span data-i18n="legIncident">Incident</span></div>
+    <div><span class="sw" style="background:#9ad7ff"></span><span data-i18n="legBorder">Country border</span></div>
+  </div>
+</aside>
+
+<!-- ------------------------------------------------------------------ -->
+<!-- aircraft detail (bottom-right)                                     -->
+<!-- ------------------------------------------------------------------ -->
+<div id="ac-detail" class="card" hidden>
+  <button id="ac-detail-close" class="icon-btn small">&#10005;</button>
+  <h3 id="ac-title">&nbsp;</h3>
+  <dl class="wx-grid">
+    <div><dt data-i18n="dType">Type</dt><dd id="ac-type">-</dd></div>
+    <div><dt data-i18n="dReg">Reg</dt><dd id="ac-reg">-</dd></div>
+    <div><dt data-i18n="dAlt">Altitude</dt><dd id="ac-alt">-</dd></div>
+    <div><dt data-i18n="dSpeed">Speed</dt><dd id="ac-speed">-</dd></div>
+    <div><dt data-i18n="dHdg">Heading</dt><dd id="ac-hdg">-</dd></div>
+    <div><dt data-i18n="dVs">V/S</dt><dd id="ac-vs">-</dd></div>
+    <div><dt data-i18n="dIcao">ICAO</dt><dd id="ac-icao">-</dd></div>
+    <div><dt data-i18n="dSquawk">Squawk</dt><dd id="ac-squawk">-</dd></div>
+  </dl>
+  <div class="popup-link" id="ac-links">
+    <a id="ac-fr24" href="#" target="_blank" rel="noopener">Flightradar24</a>
+    &middot;
+    <a id="ac-jp" href="#" target="_blank" rel="noopener" data-i18n="jpPhoto">JetPhotos photo</a>
+  </div>
+</div>
+
+<!-- bookmark modal / prompt -->
+<div id="bookmark-modal" class="modal-overlay" hidden>
+  <div class="modal-card card">
+    <div class="modal-head">
+      <h3><i class="ms">bookmark</i> <span data-i18n="bmTitle">Add HQALL to Bookmarks</span></h3>
+      <button id="bm-close" class="icon-btn small">&#10005;</button>
+    </div>
+    <div class="modal-body">
+      <p data-i18n="bmDesc">Bookmark HQALL for quick access to your live situational awareness map.</p>
+      <div class="bm-shortcut">
+        <kbd id="bm-key-mod">Ctrl</kbd> + <kbd>D</kbd>
+      </div>
+      <p class="hint" data-i18n="bmHint">Press the shortcut keys above in your browser, or drag the link below to your bookmarks toolbar:</p>
+      <div class="bm-link-container">
+        <a id="bm-link" href="#" class="bm-drag-link" data-i18n="bmLinkText">📌 HQALL Situational Map</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer id="attrib-note">
+  Data: adsb.fi &middot; RainViewer &middot; Open-Meteo &middot; Fintraffic &middot;
+  Tilannehuone &middot; aprs.fi &middot; AISHub &middot; Natural Earth
+  <span id="app-version" class="ver"></span>
+</footer>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script src="/static/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,1 @@
+"""Upstream data adapters. Each exposes async fetch helpers over httpx."""

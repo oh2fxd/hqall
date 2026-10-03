@@ -81,18 +81,46 @@ To remove background services and stop any running instance, run:
 
 ---
 
+## 🔑 API Keys Guide (Optional)
+
+By default, HQALL runs **100% keyless** for all core layers (Aircraft ADS-B, RainViewer radar, NASA GIBS clouds, Tilannehuone incidents, Fintraffic alerts, Open-Meteo weather, and Country borders). No registration or API keys are required to use HQALL out of the box.
+
+If you wish to enable optional integrations (such as live marine vessel tracking), here is where to get the keys and where to put them:
+
+### Where to get keys:
+- **AISHub Vessel Layer (`AIS_API_KEY`)**: Get a free account and username at [https://www.aishub.net/](https://www.aishub.net/) *(Your AISHub username acts as your key)*.
+- **aprs.fi API (`APRS_API_KEY`)**: Get a free API key at [https://aprs.fi/page/api](https://aprs.fi/page/api).
+- **APRS-IS Live Stream (`APRS_CALLSIGN` / `APRS_PASSCODE`)**: Registered callsign & passcode from [https://aprs.fi](https://aprs.fi).
+
+### Where to put keys (2 Options):
+
+1. **Option A: Web UI Settings Panel (Easiest)**
+   - Open HQALL in your browser.
+   - Click the **Settings (gear icon)** in the top bar.
+   - Scroll down to **API Keys (Optional)**, paste your keys, and click away. They are stored safely in your browser (`localStorage`).
+
+2. **Option B: Server `.env` File**
+   - Edit the `.env` file in the project root directory:
+     ```env
+     AIS_API_KEY=your_aishub_username
+     APRS_API_KEY=your_aprsfi_key
+     ```
+   - Restart the server.
+
+---
+
 ## 📌 Environment Variables
 
 The app runs without most credentials, but the following can be set in `.env`:
 
-| Variable | Description | Default / Fallback |
+| Variable | Description | Where to get key / Default |
 | --- | --- | --- |
 | `HQALL_HOST` | Host address to bind server | `0.0.0.0` |
 | `HQALL_PORT` | Port number to listen on | `8077` |
-| `HQALL_REPO` | Owner/repo to enable GitHub update checks | Disabled |
-| `AIS_API_KEY` | AISHub key to enable vessel layer | Disabled |
-| `APRS_CALLSIGN` / `APRS_PASSCODE` | APRS-IS login information | Anonymous / Default |
-| `APRS_API_KEY` | aprs.fi JSON API fallback key | None |
+| `HQALL_REPO` | Owner/repo to enable GitHub update checks | `oh2fxd/hqall` |
+| `AIS_API_KEY` | AISHub key to enable vessel layer | [aishub.net](https://www.aishub.net/) |
+| `APRS_CALLSIGN` / `APRS_PASSCODE` | APRS-IS login information | [aprs.fi](https://aprs.fi) |
+| `APRS_API_KEY` | aprs.fi JSON API fallback key | [aprs.fi/page/api](https://aprs.fi/page/api) |
 | `HQALL_CONTACT` | Contact string in User-Agent header | `local` |
 
 ---

@@ -89,8 +89,8 @@ def normalise(rec: dict[str, Any], lat: float, lon: float,
 
 
 async def fetch(client: httpx.AsyncClient, lat: float, lon: float,
-                radius_nm: float) -> list[dict[str, Any]]:
-    key = os.environ.get("AIS_API_KEY", "").strip()
+                radius_nm: float, api_key: str | None = None) -> list[dict[str, Any]]:
+    key = (api_key or os.environ.get("AIS_API_KEY", "")).strip()
     if not key:
         raise RuntimeError("AIS_API_KEY not set")
 

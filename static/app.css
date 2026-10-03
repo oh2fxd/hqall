@@ -556,3 +556,31 @@ kbd {
 .bm-drag-link:hover {
   background: rgba(76, 194, 255, 0.12);
 }
+
+.row-input {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 10px;
+  font-size: 12px;
+}
+.row-input input {
+  background: var(--bg-hover, #202b38);
+  border: 1px solid var(--border, #3a4a5e);
+  border-radius: 6px;
+  padding: 6px 9px;
+  color: #fff;
+  font-size: 12px;
+  font-family: inherit;
+}
+.row-input small {
+  margin-top: 2px;
+}
+.row-input small a {
+  color: var(--accent, #4cc2ff);
+  text-decoration: none;
+  font-size: 11px;
+}
+.row-input small a:hover {
+  text-decoration: underline;
+}

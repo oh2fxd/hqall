@@ -384,25 +384,27 @@ async def ais_endpoint(
     lat: float | None = None,
     lon: float | None = None,
     radius: float = Query(120.0, ge=5, le=250),
+    key: str | None = None,
 ) -> Any:
-    if not os.environ.get("AIS_API_KEY"):
+    ais_key = key or os.environ.get("AIS_API_KEY")
+    if not ais_key:
         return {"ok": False, "reason": "AIS_API_KEY not set", "vessels": []}
 
     lat = STATE["origin"]["lat"] if lat is None else lat
     lon = STATE["origin"]["lon"] if lon is None else lon
 
-    key = f"ais:{lat:.1f}:{lon:.1f}:{radius:.0f}"
-    cached = cache.get(key)
+    cache_key = f"ais:{lat:.1f}:{lon:.1f}:{radius:.0f}:{ais_key[:6]}"
+    cached = cache.get(cache_key)
     if cached:
         return cached
 
     try:
-        vessels = await ais.fetch(client, lat, lon, radius)
+        vessels = await ais.fetch(client, lat, lon, radius, api_key=ais_key)
     except Exception as exc:  # noqa: BLE001
         return JSONResponse({"ok": False, "reason": str(exc), "vessels": []}, status_code=502)
 
     payload = {"ok": True, "now": time.time(), "vessels": vessels, "count": len(vessels)}
-    cache.put(key, payload, ttl=300.0)
+    cache.put(cache_key, payload, ttl=300.0)
     return payload
 
 

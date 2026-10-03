@@ -221,6 +221,12 @@
       bmDesc: "Bookmark HQALL for quick access to your live situational awareness map.",
       bmHint: "Press the shortcut keys above in your browser, or drag the link below to your bookmarks toolbar:",
       bmLinkText: "📌 HQALL Situational Map",
+      apiHead: "API Keys (Optional)",
+      apiHint: "By default, HQALL runs 100% keyless. Optional integrations below can be enabled with free API keys:",
+      lblAisKey: "AISHub Username/Key (Vessels)",
+      linkAis: "👉 Get free key at AISHub.net",
+      lblAprsKey: "aprs.fi API Key (APRS fallback)",
+      linkAprs: "👉 Get free key at aprs.fi/page/api",
     },
     fi: {
       search: "Hae paikkaa (esim. Tampere, Helsinki)",
@@ -236,6 +242,12 @@
       bmDesc: "Lisää HQALL kirjanmerkkeihin nopeaa käyttöä varten.",
       bmHint: "Paina yllä olevaa pikanäppäintä selaimessasi tai vedä tämä linkki kirjanmerkkipalkkiin:",
       bmLinkText: "📌 HQALL Tilannekartta",
+      apiHead: "API-avaimet (Valinnaiset)",
+      apiHint: "Oletuksena kartta toimii täysin ilman avaimia. Voit lisätä alla olevat ilmaiset avaimet lisäominaisuuksille:",
+      lblAisKey: "AISHub-käyttäjätunnus/avain (Alukset)",
+      linkAis: "👉 Hae ilmainen avain: AISHub.net",
+      lblAprsKey: "aprs.fi API-avain (APRS-varayhteys)",
+      linkAprs: "👉 Hae ilmainen avain: aprs.fi/page/api",
       wxFeels: "Tuntuu", wxWind: "Tuuli", wxGusts: "Puuskat", wxClouds: "Pilvisyys",
       wxHumidity: "Kosteus", wxPressure: "Paine", wxPrecip: "Sade",
       wxVisibility: "Näkyvyys",
@@ -1058,7 +1070,12 @@
 
   async function pollAis() {
     try {
-      const data = await api("/api/ais?" + centreQuery() + "&radius=" + Math.min(250, state.radius));
+      const userAisKey = (localStorage.getItem("hqall.ais_key") || "").trim();
+      let query = "/api/ais?" + centreQuery() + "&radius=" + Math.min(250, state.radius);
+      if (userAisKey) {
+        query += "&key=" + encodeURIComponent(userAisKey);
+      }
+      const data = await api(query);
       if (data.ok === false) {
         state.data.ais = [];
         setCount("c-ais", 0);
@@ -2102,6 +2119,23 @@
     }
     if (new URLSearchParams(location.search).get("bookmark") === "1" || new URLSearchParams(location.search).get("setup") === "1") {
       if (bmModal) bmModal.removeAttribute("hidden");
+    }
+
+    const aisInput = $("cfg-ais-key");
+    const aprsInput = $("cfg-aprs-key");
+    if (aisInput) {
+      try { aisInput.value = localStorage.getItem("hqall.ais_key") || ""; } catch (e) {}
+      aisInput.addEventListener("change", function () {
+        try { localStorage.setItem("hqall.ais_key", aisInput.value.trim()); } catch (e) {}
+        pollAis();
+      });
+    }
+    if (aprsInput) {
+      try { aprsInput.value = localStorage.getItem("hqall.aprs_key") || ""; } catch (e) {}
+      aprsInput.addEventListener("change", function () {
+        try { localStorage.setItem("hqall.aprs_key", aprsInput.value.trim()); } catch (e) {}
+        pollAprs();
+      });
     }
 
     pollAircraft();

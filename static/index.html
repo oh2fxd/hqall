@@ -174,6 +174,23 @@
     <option value="esri" data-i18n="esriOp">Esri satellite</option>
   </select>
 
+  <h2 data-i18n="apiHead">API Keys (Optional)</h2>
+  <div class="api-keys-section">
+    <div class="hint" data-i18n="apiHint">
+      By default, HQALL runs 100% keyless. Optional integrations below can be enabled with free API keys:
+    </div>
+    <label class="row-input">
+      <span data-i18n="lblAisKey">AISHub Username/Key (Vessels)</span>
+      <input type="text" id="cfg-ais-key" placeholder="AISHub username" autocomplete="off" />
+      <small><a href="https://www.aishub.net/" target="_blank" rel="noopener" data-i18n="linkAis">👉 Get free key at AISHub.net</a></small>
+    </label>
+    <label class="row-input">
+      <span data-i18n="lblAprsKey">aprs.fi API Key (APRS fallback)</span>
+      <input type="text" id="cfg-aprs-key" placeholder="aprs.fi API key" autocomplete="off" />
+      <small><a href="https://aprs.fi/page/api" target="_blank" rel="noopener" data-i18n="linkAprs">👉 Get free key at aprs.fi/page/api</a></small>
+    </label>
+  </div>
+
   <h2 data-i18n="statusHead">Status</h2>
   <div id="source-status" class="status"></div>
 

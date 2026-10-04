@@ -49,7 +49,10 @@ echo -e "Using Python: ${GREEN}$PYTHON_BIN${NC}"
 
 # 3. Install dependencies
 echo -e "Installing dependencies..."
-"$PYTHON_BIN" -m pip install -r requirements.txt --quiet || "$PYTHON_BIN" -m pip install --user -r requirements.txt --quiet
+"$PYTHON_BIN" -m pip install -r requirements.txt --quiet || \
+"$PYTHON_BIN" -m pip install --user -r requirements.txt --quiet || \
+"$PYTHON_BIN" -m pip install -r requirements.txt --break-system-packages --quiet || \
+"$PYTHON_BIN" -m pip install --user -r requirements.txt --break-system-packages --quiet
 echo -e "${GREEN}✓ Dependencies installed successfully.${NC}"
 
 # 4. Configure Environment File

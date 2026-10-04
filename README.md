@@ -36,13 +36,7 @@ The installer will:
 git clone https://github.com/oh2fxd/hqall.git
 cd hqall
 
-# Option A: Using a virtual environment (Recommended)
-python3 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-
-# Option B: Direct install (if Linux gives 'externally-managed-environment' error)
-# pip install -r requirements.txt --break-system-packages
+pip install -r requirements.txt --break-system-packages
 
 # Run server directly
 python3 app.py

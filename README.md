@@ -36,7 +36,11 @@ The installer will:
 git clone https://github.com/oh2fxd/hqall.git
 cd hqall
 
+# Option A: Install via pip
 pip install -r requirements.txt --break-system-packages
+
+# Option B: Install via Debian/Ubuntu apt-get
+# sudo apt-get update && sudo apt-get install -y python3-fastapi python3-uvicorn python3-httpx python3-pytest python3-dotenv python3-websockets
 
 # Run server directly
 python3 app.py

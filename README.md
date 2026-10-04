@@ -13,7 +13,7 @@ Fully compatible with **macOS (OSX)** and **Linux**.
 Run the included cross-platform installation script to install dependencies, configure environment, open your browser, and prompt for bookmarking:
 
 ```bash
-git clone https://github.com/your-username/hqall.git
+git clone https://github.com/oh2fxd/hqall.git
 cd hqall
 ./install.sh
 ```
@@ -33,7 +33,7 @@ The installer will:
 ### Option 2: Manual Run
 
 ```bash
-git clone https://github.com/your-username/hqall.git
+git clone https://github.com/oh2fxd/hqall.git
 cd hqall
 
 pip install -r requirements.txt
